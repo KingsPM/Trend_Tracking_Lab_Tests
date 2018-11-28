@@ -1,45 +1,40 @@
 #!/usr/bin/env Rscript
 
 # TODO(Callum):
-#   Check if libraries are superfluous
+#   Check if any libraries are superfluous.
+#   Fix dplyr.so error?
 
-inputexcel <- tk_choose.files(default = '', 
-                              caption = "Please select the input excel file")
+input.excel <- tk_choose.files(default = '',
+                               caption = "Please select the input excel file")
 
-outdir <- tk_choose.dir(default = getwd(), 
-                            caption = "Where should the output be saved?")
+out.dir <- tk_choose.dir(default = getwd(),
+                         caption = "Where should the output be saved?")
+
+# Test that there is at least one argument, if not throw an error.
 
 if (length(inputexcel) == 0) {
-  stop("You need to add an input Excel file and a output location", call. = FALSE)
+  stop("You need to add an input Excel file and a output location",
+       call. = FALSE)
 }
-
-# test if there is at least one argument: if not, return an error
 
 ##### Install packages and load libraries #####
 
-# Install packages (if not installed already)
+# Function to install packages (if not installed already) and load them
 
-required.packages <- c("readxl", "tidyverse", "ggplot2", "reshape2", "lubridate", "xts",
-                       "data.table", "gridExtra", "rJava", "xlsxjars", "xlsx", "openxlsx", "tcltk")
-
-packages.not.installed <- required.packages[!(required.packages %in% installed.packages()[, "Package"])]
-
-if(length(packages.not.installed)){
-  install.packages(packages.not.installed)
+getPackages <- function(required.packages) {
+  packages.not.installed <- 
+    required.packages[!(required.packages %in% installed.packages()[, "Package"])]
+  if(length(packages.not.installed)){
+    install.packages(packages.not.installed)}
+  lapply(required.packages, require, character.only = TRUE)
 }
 
-# (tidyverse loads ggplot2, dplyr, tidyr, readr, purrr, tibble, stringr, forcats)
+# List what packages are required here
 
-# Load libraries
+getPackages(c("readxl", "tidyverse", "reshape2", "lubridate", "xts", "data.table", 
+              "gridExtra", "rJava", "xlsxjars", "xlsx", "openxlsx", "tcltk"))
 
-y <- c("readxl", "tidyverse", "ggplot2", "reshape2", "lubridate", "xts", 
-       "data.table", "gridExtra", "rJava", "xlsxjars", "xlsx", "openxlsx", "tcltk")
-
-lapply(y, require, character.only = TRUE)
-
-##### Read in data, calculate turnaround time, remove N/As #####
-
-# Load excel data
+# tidyverse loads ggplot2, dplyr, tidyr, readr, purrr, tibble, stringr, forcats
 
 data <- read_excel(inputexcel)  # Get excel from first argument
 
