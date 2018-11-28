@@ -1,11 +1,7 @@
 #!/usr/bin/env Rscript
 
 # TODO(Callum):
-#   Strip out as many libraries as possible
-
-library(tcltk)
-
-# choose.dir(getwd(), "Choose a suitable folder")  # Windows OS specific
+#   Check if libraries are superfluous
 
 inputexcel <- tk_choose.files(default = '', 
                               caption = "Please select the input excel file")
@@ -21,19 +17,23 @@ if (length(inputexcel) == 0) {
 
 ##### Install packages and load libraries #####
 
-# Install packages
+# Install packages (if not installed already)
 
-# install.packages(c("readxl", "tidyverse", "ggplot2", "reshape2", "lubridate",
-#                    "xts", "data.table", "gridExtra", "rJava", "xlsxjars",
-#                    "xlsx", "openxlsx", "dplyr"))
+required.packages <- c("readxl", "tidyverse", "ggplot2", "reshape2", "lubridate", "xts",
+                       "data.table", "gridExtra", "rJava", "xlsxjars", "xlsx", "openxlsx", "tcltk")
+
+packages.not.installed <- required.packages[!(required.packages %in% installed.packages()[, "Package"])]
+
+if(length(packages.not.installed)){
+  install.packages(packages.not.installed)
+}
 
 # (tidyverse loads ggplot2, dplyr, tidyr, readr, purrr, tibble, stringr, forcats)
 
 # Load libraries
 
-y <- c("readxl", "tidyverse", "reshape2", "lubridate", "xts", "ggplot2", 
-       "data.table", "gridExtra", "rJava", "xlsxjars", "xlsx", "openxlsx", 
-       "dplyr")
+y <- c("readxl", "tidyverse", "ggplot2", "reshape2", "lubridate", "xts", 
+       "data.table", "gridExtra", "rJava", "xlsxjars", "xlsx", "openxlsx", "tcltk")
 
 lapply(y, require, character.only = TRUE)
 
@@ -45,12 +45,9 @@ data <- read_excel(inputexcel)  # Get excel from first argument
 
 # Produce a table (Audit) that has the turnaround times for each investigation
 
-# examplefunction <- function(a) {
-#   print(a)
-# }
-# 
-# examplefunction('this')
+install.packages("unused_packages")
 
+unused_packages(project = NULL, lib.loc = libDir("/home/callum2/Dropbox/STP/SBI-102/Trend_Tracking_Lab_Tests/Lab_Activity_Data.R"))
 
 createDF <- function(data) {
   Audit <- data[c("SIDC09 Hospital", "SIDC13 Investigation Requested", "SIDC16 Date Sample Received", "Reported date", "Real Billing category")]
@@ -241,4 +238,4 @@ if (!interactive()) {
   main(createDF(data))
 }
 
-main(createDF(data))
+# main(createDF(data))
