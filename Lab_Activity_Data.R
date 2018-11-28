@@ -1,12 +1,24 @@
 #!/usr/bin/env Rscript
 
-args = commandArgs(trailingOnly = TRUE)  # Check input file has been added
+# TODO 
+# - Specify input and output on the cmd line
+# - Wrap everything in functions
+
+library(tcltk)
+
+# choose.dir(getwd(), "Choose a suitable folder")  # Windows OS specific
+
+inputexcel <- tk_choose.files(default = '', 
+                              caption = "Please select the input excel file")
+
+outdir <- tk_choose.dir(default = getwd(), 
+                            caption = "Where should the output be saved?")
 
 # test if there is at least one argument: if not, return an error
 
-if (length(args) == 0) {
-  stop("You need to add an input Excel file and a output location", call. = FALSE)
-} 
+# if (length(args) == 0) {
+#   stop("You need to add an input Excel file and a output location", call. = FALSE)
+# }
 
 ##### Install packages and load libraries #####
 
@@ -30,9 +42,7 @@ lapply(y, require, character.only = TRUE)
 
 # Load excel data
 
-data <- read_excel(args[1])
-
-# data <- read_excel("~/Desktop/2016-2017-2018_LMh-Activity_Barnaby.xlsx")
+data <- read_excel(inputexcel)  # Get excel from first argument
 
 # Produce a table (Audit) that has the turnaround times for each investigation
 
@@ -52,17 +62,15 @@ colnames(Audit)[10] <- "Target_Turnaround"
 
 auditNoNAs <- na.omit(Audit)
 
-# If you wanted to only count weekdays
-
-# sum(!grepl("S", weekdays(seq(Sys.Date(), as.Date(scan(,""), 
-# "%d.%m.%Y"), 1)))) + 1
+# If you wanted to only count weekdays -> don't want to do this currently
+# sum(!grepl("S", weekdays(seq(Sys.Date(), as.Date(scan(,""), "%d.%m.%Y"), 1)))) + 1
 
 ##### Plot turnover time of each test per month #####
 
 turnoverTime <- auditNoNAs[c("Investigation", "Year_Month", "Turnover_Time", "Target_Turnaround")]
 turnoverTime <- na.omit(turnoverTime)
 
-pdf("~/Desktop/Turnover Time Per Test.pdf")
+pdf(paste0(outdir, "output/Turnover Time Per Test.pdf"))
 sort(unique(turnoverTime$Investigation))
 lapply(sort(unique(turnoverTime$Investigation)), 
        function(i) {ggplot(turnoverTime[turnoverTime$Investigation == i,],
@@ -96,7 +104,7 @@ Hospital <- Audit[c("Hospital", "Investigation", "Year_Month")]
 
 # Save test frequency and referring hospital for each year 
 
-wb = createWorkbook("Investigations per hospital per month")
+wb = createWorkbook(paste0(outdir, "output/Investigations per hospital per month"))
 
 for (i in sort(unique(Hospital$Year_Month))){
   excelPrintout <- Hospital[Hospital$Year_Month == i,]
@@ -108,10 +116,10 @@ for (i in sort(unique(Hospital$Year_Month))){
     sheetName = i) # Doesn't print?
   writeData(wb = wb,
     sheet = i, x = excelPrintout)
-  saveWorkbook(wb, "/home/callum2/Desktop/Investigations per hospital per month.xlsx", overwrite = TRUE)
+  saveWorkbook(wb, paste0(outdir, "output/Investigations per hospital per month.xlsx"), overwrite = TRUE)
 }
 
-wb1 = createWorkbook("Investigations Each Month By Hospital")
+wb1 = createWorkbook(paste0(outdir, "output/Investigations Each Month By Hospital"))
 
 for (i in sort(unique(Hospital$Investigation))){
   excelPrintout <- Hospital[Hospital$Investigation == i,]
@@ -123,26 +131,24 @@ for (i in sort(unique(Hospital$Investigation))){
     sheetName = substr(i, 1, 31))  # Needed to substring as name limit of 31 characters
   writeData(wb = wb1,
     sheet = substr(i, 1, 31), x = excelPrintout)
-  saveWorkbook(wb1, "/home/callum2/Desktop/Investigations per month per hospital.xlsx", overwrite = TRUE)
+  saveWorkbook(wb1, paste0(outdir, "output/Investigations per month per hospital.xlsx"), overwrite = TRUE)
 }
 
 ###############################################################################
 
 ##### Plot number of investigations per month, year by year #####
 
-# Count the number of results for each investigation
-
-# Convert investigations into a frequency while retaining year 
-# and month as a subcategory
+# Count the number of results for each investigation. Convert investigations into 
+# a frequency while retaining year and month as a subcategory.
 
 Investigation <- Audit[c("Investigation", "Year_Reported", "Month_Reported")]
-Investigation <- Investigation[!(Investigation$Year_Reported == "1899"),]
+Investigation <- Investigation[!(Investigation$Year_Reported == "1899"),]  # rm anomalous data
 Investigation <- as.data.frame(table(Investigation))
 Investigation[Investigation == 0] <- NA
 
 # Plot line for number of investigations done each month, year on year
 
-pdf("~/Desktop/Tests Each Month.pdf")
+pdf(paste0(outdir, "output/Tests Each Month.pdf"))
 
 lapply(sort(unique(Investigation$Investigation)), 
     function(i) {ggplot(Investigation[Investigation$Investigation == i,], 
@@ -166,7 +172,7 @@ workFreq <- auditNoNAs[c("Billing_Category", "Year_Reported", "Month_Reported")]
 workFreq <- as.data.frame(table(workFreq))
 workFreq[workFreq == 0] <- NA
 
-pdf("~/Desktop/Billing Categories.pdf")
+pdf(paste0(outdir, "output/Billing Categories.pdf"))
 
 lapply(sort(unique(workFreq$Billing_Category)), 
   function(i) {ggplot(workFreq[workFreq$Billing_Category == i,], 
@@ -193,7 +199,7 @@ referrerHospital <- as.data.frame(table(referrerHospital))
 referrerHospital <- subset(referrerHospital, Hospital %in% topHospitals$topHospitals)
 referrerHospital[referrerHospital == 0] <- NA
 
-pdf("~/Desktop/Top 10 Referrers.pdf")
+pdf(paste0(outdir, "output/Top 10 Referrers.pdf"))
 
 lapply(sort(unique(referrerHospital$Hospital)), 
   function(i) {ggplot(referrerHospital[referrerHospital$Hospital == i,], 
