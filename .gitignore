@@ -41,3 +41,6 @@ rsconnect/
 
 #Ignore the output directory
 output/
+
+# R Project files
+*.Rproj
