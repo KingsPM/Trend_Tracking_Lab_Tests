@@ -38,3 +38,6 @@ rsconnect/
 # Excel files (have lab information)
 *.xls
 *.xlsx
+
+#Ignore the output directory
+output/
