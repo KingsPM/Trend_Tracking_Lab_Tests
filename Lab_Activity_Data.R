@@ -1,21 +1,13 @@
 #!/usr/bin/env Rscript
 
+# sudo R CMD javareconf
+# sudo apt install default-jre
+# sudo apt install default-jdk
+# R CMD javareconf
+
 # TODO(Callum):
 #   Check if any libraries are superfluous.
 #   Fix dplyr.so (tidyverse) error? -> currently just removed this.
-
-input.excel <- tk_choose.files(default = '',
-                               caption = "Please select the input excel file")
-
-out.dir <- tk_choose.dir(default = getwd(),
-                         caption = "Where should the output be saved?")
-
-# Test that there is at least one argument, if not throw an error.
-
-if (length(input.excel) == 0) {
-  stop("You need to add an input Excel file and a output location",
-       call. = FALSE)
-}
 
 ##### Install packages and load libraries #####
 
@@ -33,12 +25,25 @@ getPackages <- function(required.packages) {
 
 # List what packages are required here
 
-# "tidyverse" -> had issues loading this in Ubuntu 18.04.1 LTS, still not fixed
-
-getPackages(c("readxl", "reshape2", "lubridate", "xts", "data.table", 
-              "gridExtra", "rJava", "xlsxjars", "xlsx", "openxlsx", "tcltk"))
-
+# "tidyverse" -> had issues loading in Ubuntu 18.04.1 LTS
 # tidyverse loads ggplot2, dplyr, tidyr, readr, purrr, tibble, stringr, forcats
+
+
+getPackages(c("tcltk", "readxl", "reshape2", "lubridate", "xts", "data.table", "ggplot2",
+              "gridExtra", "xlsx", "rJava", "xlsxjars",  "openxlsx",  "openxlsx"))
+
+input.excel <- tk_choose.files(default = '',
+                               caption = "Please select the input excel file")
+
+out.dir <- tk_choose.dir(default = getwd(),
+                         caption = "Where should the output be saved?")
+
+# Test that there is at least one argument, if not throw an error.
+
+if (length(input.excel) == 0) {
+  stop("You need to add an input Excel file and a output location",
+       call. = FALSE)
+}
 
 data <- read_excel(input.excel)  # Get excel from first argument
 
@@ -73,7 +78,7 @@ createDF <- function(data) {
 createPDF1 <- function(data) {
   turnoverTime <- data[c("Investigation", "Year_Month", "Turnover_Time", "Target_Turnaround")]
   turnoverTime <- na.omit(turnoverTime)
-  pdf(paste0(out.dir, "/output/Turnover Time Per Test.pdf"))
+  pdf(paste0(out.dir, "/Turnover Time Per Test.pdf"))
   sort(unique(turnoverTime$Investigation))
   lapply(sort(unique(turnoverTime$Investigation)), 
          function(i) {ggplot(turnoverTime[turnoverTime$Investigation == i,],
@@ -108,7 +113,7 @@ createPDF1 <- function(data) {
 
 
 createExcel1 <- function(data) {
-  wb = createWorkbook(paste0(out.dir, "/output/Investigations per hospital per month"))
+  wb = createWorkbook(paste0(out.dir, "/Investigations per hospital per month"))
   Hospital <- data[c("Hospital", "Investigation", "Year_Month")]
   for (i in sort(unique(Hospital$Year_Month))){
     excelPrintout <- Hospital[Hospital$Year_Month == i,]
@@ -118,13 +123,13 @@ createExcel1 <- function(data) {
     excelPrintout <- excelPrintout[row_sub,]
     addWorksheet(wb = wb, sheetName = i)  # Doesn't print?
     writeData(wb = wb, sheet = i, x = excelPrintout)
-    saveWorkbook(wb, paste0(out.dir, "/output/Investigations per hospital per month.xlsx"),
+    saveWorkbook(wb, paste0(out.dir, "/Investigations per hospital per month.xlsx"),
                overwrite = TRUE)}
 }
 
 
 createExcel2 <- function(data) {
-  wb = createWorkbook(paste0(out.dir, "/output/Investigations Each Month By Hospital"))
+  wb = createWorkbook(paste0(out.dir, "/Investigations Each Month By Hospital"))
   Hospital <- data[c("Hospital", "Investigation", "Year_Month")]
   for (i in sort(unique(Hospital$Investigation))){
     excelPrintout <- Hospital[Hospital$Investigation == i,]
@@ -134,7 +139,7 @@ createExcel2 <- function(data) {
     excelPrintout <- excelPrintout[row_sub,]
     addWorksheet(wb = wb, sheetName = substr(i, 1, 31))  # Needed to substring as name limit of 31 characters
     writeData(wb = wb, sheet = substr(i, 1, 31), x = excelPrintout)
-    saveWorkbook(wb, paste0(out.dir, "/output/Investigations per month per hospital.xlsx"),
+    saveWorkbook(wb, paste0(out.dir, "/Investigations per month per hospital.xlsx"),
                  overwrite = TRUE)}
 }
 
@@ -155,7 +160,7 @@ createPDF2 <- function(data) {
   
   # Plot line for number of investigations done each month, year on year
   
-  pdf(paste0(out.dir, "/output/Tests Each Month.pdf"))
+  pdf(paste0(out.dir, "/Tests Each Month.pdf"))
   
   lapply(sort(unique(Investigation$Investigation)), 
     function(i) {ggplot(Investigation[Investigation$Investigation == i,], 
@@ -178,7 +183,7 @@ createPDF3 <- function(data) {
   workFreq <- data[c("Billing_Category", "Year_Reported", "Month_Reported")]
   workFreq <- as.data.frame(table(workFreq))
   workFreq[workFreq == 0] <- NA
-  pdf(paste0(out.dir, "/output/Billing Categories.pdf"))
+  pdf(paste0(out.dir, "/Billing Categories.pdf"))
   lapply(sort(unique(workFreq$Billing_Category)), 
   function(i) {ggplot(workFreq[workFreq$Billing_Category == i,], 
     aes(Month_Reported, Freq, group = Year_Reported, color = Year_Reported)) +
@@ -206,7 +211,7 @@ createPDF4 <- function(data) {
   referrerHospital <- as.data.frame(table(referrerHospital))
   referrerHospital <- subset(referrerHospital, Hospital %in% topHospitals$topHospitals)
   referrerHospital[referrerHospital == 0] <- NA
-  pdf(paste0(out.dir, "/output/Top 10 Referrers.pdf"))
+  pdf(paste0(out.dir, "/Top 10 Referrers.pdf"))
   lapply(sort(unique(referrerHospital$Hospital)),
          function(i) {ggplot(referrerHospital[referrerHospital$Hospital == i,],
                              aes(Month_Reported, Freq, group = Year_Reported, color = Year_Reported)) +

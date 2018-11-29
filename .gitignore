@@ -44,3 +44,4 @@ output/
 
 # R Project files
 *.Rproj
+.Rproj.user
