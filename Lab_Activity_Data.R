@@ -2,7 +2,7 @@
 
 # TODO(Callum):
 #   Check if any libraries are superfluous.
-#   Fix dplyr.so error?
+#   Fix dplyr.so (tidyverse) error? -> currently just removed this.
 
 input.excel <- tk_choose.files(default = '',
                                caption = "Please select the input excel file")
@@ -21,6 +21,7 @@ if (length(input.excel) == 0) {
 
 # Function to install packages (if not installed already) and load them
 
+
 getPackages <- function(required.packages) {
   packages.not.installed <- 
     required.packages[!(required.packages %in% installed.packages()[, "Package"])]
@@ -28,6 +29,7 @@ getPackages <- function(required.packages) {
     install.packages(packages.not.installed)}
   lapply(required.packages, require, character.only = TRUE)
 }
+
 
 # List what packages are required here
 
@@ -60,6 +62,7 @@ createDF <- function(data) {
   Audit <- na.omit(Audit)
   return(Audit)
 }
+
 
 # If you wanted to only count weekdays -> don't want to do this currently
 # sum(!grepl("S", weekdays(seq(Sys.Date(), as.Date(scan(,""), "%d.%m.%Y"), 1)))) + 1
@@ -97,10 +100,10 @@ createPDF1 <- function(data) {
   dev.off()
 }
 
+
 ##### Print out some excel sheets #####
 
 # Create dataset
-
 # Save test frequency and referring hospital for each year 
 
 
@@ -135,6 +138,7 @@ createExcel2 <- function(data) {
                  overwrite = TRUE)}
 }
 
+
 ###############################################################################
 
 ##### Plot number of investigations per month, year by year #####
@@ -165,6 +169,7 @@ createPDF2 <- function(data) {
 dev.off()
 
 }
+
 
 ##### Number of billing types per month, year on year #####
 
@@ -233,4 +238,4 @@ if (!interactive()) {
   main(createDF(data))
 }
 
-main(createDF(data))
+# main(createDF(data))
