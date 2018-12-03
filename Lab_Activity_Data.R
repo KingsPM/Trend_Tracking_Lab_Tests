@@ -9,7 +9,7 @@
 # sudo apt install default-jdk
 # R CMD javareconf
 
-##### Install packages and load libraries #####
+##### Install packages, load libraries, get file paths #####
 
 # Function to install packages (if not installed already) and load them
 
@@ -44,7 +44,7 @@ if (length(input.excel) == 0) {
 
 data <- read_excel(input.excel)  # Get data frame from input excel file
 
-# Produce a table (Audit) that has the turnaround times for each investigation
+##### Produce a table that has the turnaround times from the input excel #####
 
 
 createDF <- function(data) {
@@ -66,7 +66,7 @@ createDF <- function(data) {
 }
 
 
-# If you wanted to only count weekdays -> don't want to do this currently
+# If you want to only count weekdays can use the line below (don't do this currently)
 # sum(!grepl("S", weekdays(seq(Sys.Date(), as.Date(scan(,""), "%d.%m.%Y"), 1)))) + 1
 
 ##### Plot turnover time of each test per month #####
@@ -223,7 +223,7 @@ dev.off()
 }
 
 
-# The main function to call everything
+##### The main function to call everything #####
 
 
 main <- function(input) {
