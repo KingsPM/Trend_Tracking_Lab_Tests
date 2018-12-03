@@ -1,14 +1,13 @@
 #!/usr/bin/env Rscript
 
+# TODO(Callum):
+#   Make the script more portable (currently need java prerequisites)
+
 # have to install java environments locally outside of R
 # sudo R CMD javareconf
 # sudo apt install default-jre
 # sudo apt install default-jdk
 # R CMD javareconf
-
-# TODO(Callum):
-#   Check if any libraries are superfluous.
-#   Fix dplyr.so (tidyverse) error? -> currently just removed this.
 
 ##### Install packages and load libraries #####
 
@@ -23,11 +22,8 @@ getPackages <- function(required.packages) {
   lapply(required.packages, require, character.only = TRUE)
 }
 
-
-# List what packages are required here
-
-# "tidyverse" -> had issues loading in Ubuntu 18.04.1 LTS
-# tidyverse loads ggplot2, dplyr, tidyr, readr, purrr, tibble, stringr, forcats
+# tidyverse had issues loading in Ubuntu 18.04.1 LTS so I removed it.
+# tidyverse loads ggplot2, dplyr, tidyr, readr, purrr, tibble, stringr, forcats.
 
 
 getPackages(c("tcltk", "readxl", "reshape2", "lubridate", "xts", "data.table", "ggplot2",
@@ -46,7 +42,7 @@ if (length(input.excel) == 0) {
        call. = FALSE)
 }
 
-data <- read_excel(input.excel)  # Get excel from first argument
+data <- read_excel(input.excel)  # Get data frame from input excel file
 
 # Produce a table (Audit) that has the turnaround times for each investigation
 
