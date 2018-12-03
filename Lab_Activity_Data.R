@@ -4,7 +4,6 @@
 #   Make the script more portable (currently need java prerequisites)
 
 # have to install java environments locally outside of R
-# sudo R CMD javareconf
 # sudo apt install default-jre
 # sudo apt install default-jdk
 # R CMD javareconf
@@ -22,9 +21,9 @@ getPackages <- function(required.packages) {
   lapply(required.packages, require, character.only = TRUE)
 }
 
+
 # tidyverse had issues loading in Ubuntu 18.04.1 LTS so I removed it.
 # tidyverse loads ggplot2, dplyr, tidyr, readr, purrr, tibble, stringr, forcats.
-
 
 getPackages(c("tcltk", "readxl", "reshape2", "lubridate", "xts", "data.table", "ggplot2",
               "gridExtra", "xlsx", "rJava", "xlsxjars",  "openxlsx",  "openxlsx"))
@@ -169,7 +168,7 @@ createPDF2 <- function(data) {
       })
 
 dev.off()
-
+``
 }
 
 
