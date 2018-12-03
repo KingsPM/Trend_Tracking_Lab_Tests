@@ -1,5 +1,6 @@
 #!/usr/bin/env Rscript
 
+# have to install java environments locally outside of R
 # sudo R CMD javareconf
 # sudo apt install default-jre
 # sudo apt install default-jdk
