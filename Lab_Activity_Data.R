@@ -223,37 +223,6 @@ createPDF4 <- function(data) {
 }
 
 
-######
-
-
-createPDF4 <- function(data) {
-  topHospitals <- data[c("Hospital")]
-  topHospitals <- as.data.frame(table(topHospitals))
-  topHospitals <- topHospitals[ave(-topHospitals$Freq, FUN = rank) <= 10, ]
-  referrerHospital <- data[c("Hospital", "Year_Reported", "Month_Reported")]
-  referrerHospital <- as.data.frame(table(referrerHospital))
-  referrerHospital <- subset(referrerHospital, Hospital %in% topHospitals$topHospitals)
-  pdf(paste0(out.dir, "/Top 10 Referrers.pdf"))
-  graph <- lapply(sort(unique(referrerHospital$Hospital)),
-         function(i) {ggplot(referrerHospital[referrerHospital$Hospital == i,],
-                             aes(Month_Reported, 
-                                 Freq,
-                                 group = Year_Reported,
-                                 color = Year_Reported)) +
-             labs(title = i, y = "Frequency", x = "Month") +
-             geom_point() +
-             geom_line() +
-             theme_minimal() +
-             theme(axis.text.x = element_text(angle = 45, hjust = 1),
-                   panel.grid.major.x = element_blank(),
-                   panel.grid.major.y = element_line(size = .1, color = "black"))
-           }
-         )
-  print(graph)
-  dev.off()
-}
-
-
 ##### The main function to call everything #####
 
 
@@ -266,8 +235,7 @@ main <- function(input) {
   createExcel2(input)
 }
 
+
 if (!interactive()) {
   main(createDF(data))
 }
-
-warnings(main(data))
