@@ -2,6 +2,7 @@
 
 # TODO(Callum):
 #   Make the script more portable (currently need java prerequisites)
+#   The functions keep dropping rows containing non-finite values, can this be fixed?
 
 # have to install java environments locally outside of R
 # sudo apt install default-jre
@@ -68,40 +69,6 @@ createDF <- function(data) {
 # If you want to only count weekdays can use the line below (don't do this currently)
 # sum(!grepl("S", weekdays(seq(Sys.Date(), as.Date(scan(,""), "%d.%m.%Y"), 1)))) + 1
 
-##### Plot turnover time of each test per month #####
-
-
-createPDF1 <- function(data) {
-  turnoverTime <- data[c("Investigation", "Year_Month", "Turnover_Time", "Target_Turnaround")]
-  turnoverTime <- na.omit(turnoverTime)
-  pdf(paste0(out.dir, "/Turnover Time Per Test.pdf"))
-  sort(unique(turnoverTime$Investigation))
-  lapply(sort(unique(turnoverTime$Investigation)), 
-         function(i) {ggplot(turnoverTime[turnoverTime$Investigation == i,],
-                             aes(x = Year_Month, y = Turnover_Time)) +
-             labs(title = i, subtitle = "Outliers, defined as ±1.5*IQR, output
-                  have not been plotted. Boxplots \nrepresent Median, Q1-Q3 
-                  and 1.5*Q1Q3. Red line is the mean.",
-                  y = "Turnaround Time (Days)",
-                  x = "Year and Month") +
-             geom_boxplot(alpha = 0.80, outlier.colour = "black", 
-                          outlier.shape = NA, outlier.size = .5, notch = FALSE,
-                          fill = "lightskyblue2", color = "black") +
-             stat_summary(aes(y = Turnover_Time, group = 1), fun.y = mean,
-                          colour="red", geom="line", group = 1) +
-             theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1),
-                                     panel.grid.major.x = element_blank(), 
-                                     panel.grid.major.y = element_line(size = .1, color = "black")) +
-             scale_x_discrete(limits = sort(unique(data$Year_Month)),
-                              breaks = sort(unique(data$Year_Month))) +
-             ylim(-5, quantile(turnoverTime[turnoverTime$Investigation == i,][[3]])[[4]]+10) +
-             geom_hline(yintercept = data$Target_Turnaround, linetype = "dashed",
-                        color = "red", size = .5)}
-         )
-  dev.off()
-}
-
-
 ##### Print out some excel sheets #####
 
 # Create dataset
@@ -142,6 +109,39 @@ createExcel2 <- function(data) {
 
 ###############################################################################
 
+##### Plot turnover time of each test per month #####
+
+
+createPDF1 <- function(data) {
+  turnoverTime <- data[c("Investigation", "Year_Month", "Turnover_Time", "Target_Turnaround")]
+  turnoverTime <- na.omit(turnoverTime)
+  pdf(paste0(out.dir, "/Turnover Time Per Test.pdf"))
+  sort(unique(turnoverTime$Investigation))
+  graph <- lapply(sort(unique(turnoverTime$Investigation)), 
+         function(i) {ggplot(turnoverTime[turnoverTime$Investigation == i,],
+                             aes(x = Year_Month, y = Turnover_Time)) +
+             labs(title = i, subtitle = "Outliers, defined as ±1.5*IQR, output
+                  have not been plotted. Boxplots \nrepresent Median, Q1-Q3 
+                  and 1.5*Q1Q3. Red line is the mean.",
+                  y = "Turnaround Time (Days)",
+                  x = "Year and Month") +
+             geom_boxplot(alpha = 0.80, outlier.colour = "black",
+                          outlier.shape = NA, outlier.size = .5, notch = FALSE,
+                          fill = "lightskyblue2", color = "black") +
+             stat_summary(aes(y = Turnover_Time, group = 1), fun.y = mean,
+                          colour="red", geom="line", group = 1) +
+             theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                                     panel.grid.major.x = element_blank(), 
+                                     panel.grid.major.y = element_line(size = .1, color = "black")) +
+             scale_x_discrete(limits = sort(unique(data$Year_Month)),
+                              breaks = sort(unique(data$Year_Month))) +
+             ylim(-5, quantile(turnoverTime[turnoverTime$Investigation == i,][[3]])[[4]]+10) +
+             geom_hline(yintercept = data$Target_Turnaround, linetype = "dashed",
+                        color = "red", size = .5)})
+  print(graph)
+  dev.off()
+}
+
 ##### Plot number of investigations per month, year by year #####
 
 # Count the number of results for each investigation. Convert investigations into 
@@ -157,19 +157,17 @@ createPDF2 <- function(data) {
   # Plot line for number of investigations done each month, year on year
   
   pdf(paste0(out.dir, "/Tests Each Month.pdf"))
-  
-  lapply(sort(unique(Investigation$Investigation)), 
+  graph <- lapply(sort(unique(Investigation$Investigation)), 
     function(i) {ggplot(Investigation[Investigation$Investigation == i,], 
       aes(Month_Reported, Freq, group = Year_Reported, color = Year_Reported)) +
-    labs(title = i, y = "Frequency", x = "Month") + geom_point() +
-    geom_line() + theme_minimal() + theme(axis.text.x = element_text(),
-                                          panel.grid.major.x = element_blank(),
-                                          panel.grid.major.y = element_line(size = .1, color = "black"))
+      labs(title = i, y = "Frequency", x = "Month") + geom_point() +
+      geom_line() + theme_minimal() + theme(axis.text.x = element_text(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(size = .1, color = "black"))
       })
-
-dev.off()
-``
-}
+  print(graph)
+  dev.off()
+  }
 
 
 ##### Number of billing types per month, year on year #####
@@ -180,23 +178,25 @@ createPDF3 <- function(data) {
   workFreq <- as.data.frame(table(workFreq))
   workFreq[workFreq == 0] <- NA
   pdf(paste0(out.dir, "/Billing Categories.pdf"))
-  lapply(sort(unique(workFreq$Billing_Category)), 
-  function(i) {ggplot(workFreq[workFreq$Billing_Category == i,], 
-    aes(Month_Reported, Freq, group = Year_Reported, color = Year_Reported)) +
-    labs(title = i,
-      y = "Frequency",
-      x = "Month") +
-    geom_point() +
-    geom_line() +
-    theme_minimal() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1),
-      panel.grid.major.x = element_blank(), 
-      panel.grid.major.y = element_line(size = .1, color = "black"))
+  graph <- lapply(sort(unique(workFreq$Billing_Category)), 
+    function(i) {ggplot(workFreq[workFreq$Billing_Category == i,], 
+      aes(Month_Reported, Freq, group = Year_Reported, color = Year_Reported)) +
+      labs(title = i,
+        y = "Frequency",
+        x = "Month") +
+      geom_point() +
+      geom_line() +
+      theme_minimal() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid.major.x = element_blank(), 
+        panel.grid.major.y = element_line(size = .1, color = "black"))
     })
-
-dev.off()
-
+  print(graph)
+  dev.off()
 }
+
+
+##### Plot the trends in the tests ordered by the top 10 referrer hospitals #####
 
 
 createPDF4 <- function(data) {
@@ -206,19 +206,51 @@ createPDF4 <- function(data) {
   referrerHospital <- data[c("Hospital", "Year_Reported", "Month_Reported")]
   referrerHospital <- as.data.frame(table(referrerHospital))
   referrerHospital <- subset(referrerHospital, Hospital %in% topHospitals$topHospitals)
-  referrerHospital[referrerHospital == 0] <- NA
   pdf(paste0(out.dir, "/Top 10 Referrers.pdf"))
-  lapply(sort(unique(referrerHospital$Hospital)),
+  graph <- lapply(sort(unique(referrerHospital$Hospital)),
+    function(i) {ggplot(referrerHospital[referrerHospital$Hospital == i,],
+      aes(Month_Reported, Freq, group = Year_Reported, color = Year_Reported)) +
+      labs(title = i, y = "Frequency", x = "Month") +
+      geom_point() +
+      geom_line() +
+      theme_minimal() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(size = .1, color = "black"))
+      })
+  print(graph)
+  dev.off()
+}
+
+
+######
+
+
+createPDF4 <- function(data) {
+  topHospitals <- data[c("Hospital")]
+  topHospitals <- as.data.frame(table(topHospitals))
+  topHospitals <- topHospitals[ave(-topHospitals$Freq, FUN = rank) <= 10, ]
+  referrerHospital <- data[c("Hospital", "Year_Reported", "Month_Reported")]
+  referrerHospital <- as.data.frame(table(referrerHospital))
+  referrerHospital <- subset(referrerHospital, Hospital %in% topHospitals$topHospitals)
+  pdf(paste0(out.dir, "/Top 10 Referrers.pdf"))
+  graph <- lapply(sort(unique(referrerHospital$Hospital)),
          function(i) {ggplot(referrerHospital[referrerHospital$Hospital == i,],
-                             aes(Month_Reported, Freq, group = Year_Reported, color = Year_Reported)) +
-             labs(title = i, y = "Frequency", x = "Month") + geom_point() +
-             geom_line() + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1),
-                                                   panel.grid.major.x = element_blank(),
-                                                   panel.grid.major.y = element_line(size = .1, color = "black"))
-})
-
-dev.off()
-
+                             aes(Month_Reported, 
+                                 Freq,
+                                 group = Year_Reported,
+                                 color = Year_Reported)) +
+             labs(title = i, y = "Frequency", x = "Month") +
+             geom_point() +
+             geom_line() +
+             theme_minimal() +
+             theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                   panel.grid.major.x = element_blank(),
+                   panel.grid.major.y = element_line(size = .1, color = "black"))
+           }
+         )
+  print(graph)
+  dev.off()
 }
 
 
@@ -234,9 +266,8 @@ main <- function(input) {
   createExcel2(input)
 }
 
-
 if (!interactive()) {
   main(createDF(data))
 }
 
-# main(createDF(data))
+warnings(main(data))
