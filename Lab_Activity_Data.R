@@ -2,6 +2,7 @@
 
 # TODO(Callum):
 #   Make the script more portable (currently need java prerequisites)
+#   Virtual environment for R?
 #   The functions keep dropping rows containing non-finite values, can this be fixed?
 
 # have to install java environments locally outside of R
@@ -23,11 +24,12 @@ getPackages <- function(required.packages) {
 }
 
 
-# tidyverse had issues loading in Ubuntu 18.04.1 LTS so I removed it.
+# tidyverse had issues loading in Ubuntu 18.04.1 LTS so it was removed.
 # tidyverse loads ggplot2, dplyr, tidyr, readr, purrr, tibble, stringr, forcats.
+# Currently removed the "rJava" and "xlsxjars" packages
 
-getPackages(c("tcltk", "readxl", "reshape2", "lubridate", "xts", "data.table", "ggplot2",
-              "gridExtra", "xlsx", "rJava", "xlsxjars",  "openxlsx",  "openxlsx"))
+getPackages(c("tcltk", "readxl", "reshape2", "lubridate", "xts", 
+              "data.table", "ggplot2", "gridExtra", "xlsx", "openxlsx"))
 
 input.excel <- tk_choose.files(default = '',
                                caption = "Please select the input excel file")
@@ -65,9 +67,6 @@ createDF <- function(data) {
   return(Audit)
 }
 
-
-# If you want to only count weekdays can use the line below (don't do this currently)
-# sum(!grepl("S", weekdays(seq(Sys.Date(), as.Date(scan(,""), "%d.%m.%Y"), 1)))) + 1
 
 ##### Print out some excel sheets #####
 
@@ -120,9 +119,7 @@ createPDF1 <- function(data) {
   graph <- lapply(sort(unique(turnoverTime$Investigation)), 
          function(i) {ggplot(turnoverTime[turnoverTime$Investigation == i,],
                              aes(x = Year_Month, y = Turnover_Time)) +
-             labs(title = i, subtitle = "Outliers, defined as ±1.5*IQR, output
-                  have not been plotted. Boxplots \nrepresent Median, Q1-Q3 
-                  and 1.5*Q1Q3. Red line is the mean.",
+             labs(title = i, subtitle = "Outliers, defined as ±1.5*IQR, output have not been plotted. Boxplots \nrepresent Median, Q1-Q3 and 1.5*Q1Q3. Red line is the mean.",
                   y = "Turnaround Time (Days)",
                   x = "Year and Month") +
              geom_boxplot(alpha = 0.80, outlier.colour = "black",
@@ -142,6 +139,7 @@ createPDF1 <- function(data) {
   dev.off()
 }
 
+
 ##### Plot number of investigations per month, year by year #####
 
 # Count the number of results for each investigation. Convert investigations into 
@@ -153,15 +151,14 @@ createPDF2 <- function(data) {
   Investigation <- Investigation[!(Investigation$Year_Reported == "1899"),]  # rm anomalous data
   Investigation <- as.data.frame(table(Investigation))
   Investigation[Investigation == 0] <- NA
-  
-  # Plot line for number of investigations done each month, year on year
-  
   pdf(paste0(out.dir, "/Tests Each Month.pdf"))
   graph <- lapply(sort(unique(Investigation$Investigation)), 
     function(i) {ggplot(Investigation[Investigation$Investigation == i,], 
       aes(Month_Reported, Freq, group = Year_Reported, color = Year_Reported)) +
       labs(title = i, y = "Frequency", x = "Month") + geom_point() +
-      geom_line() + theme_minimal() + theme(axis.text.x = element_text(),
+      geom_line() +
+      theme_minimal() +
+      theme(axis.text.x = element_text(),
         panel.grid.major.x = element_blank(),
         panel.grid.major.y = element_line(size = .1, color = "black"))
       })
@@ -170,7 +167,7 @@ createPDF2 <- function(data) {
   }
 
 
-##### Number of billing types per month, year on year #####
+##### Plot number of billing types per month, year on year #####
 
 
 createPDF3 <- function(data) {
@@ -206,6 +203,7 @@ createPDF4 <- function(data) {
   referrerHospital <- data[c("Hospital", "Year_Reported", "Month_Reported")]
   referrerHospital <- as.data.frame(table(referrerHospital))
   referrerHospital <- subset(referrerHospital, Hospital %in% topHospitals$topHospitals)
+  referrerHospital[referrerHospital == 0] <- NA
   pdf(paste0(out.dir, "/Top 10 Referrers.pdf"))
   graph <- lapply(sort(unique(referrerHospital$Hospital)),
     function(i) {ggplot(referrerHospital[referrerHospital$Hospital == i,],
@@ -236,6 +234,6 @@ main <- function(input) {
 }
 
 
-if (!interactive()) {
+if (!interactive()) {  # If interactive, run the fucntion main(createDF(data))
   main(createDF(data))
 }
