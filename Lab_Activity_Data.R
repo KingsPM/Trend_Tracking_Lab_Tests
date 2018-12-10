@@ -59,8 +59,7 @@ createDF <- function(data) {
 
 ##### Print out some excel sheets #####
 
-# Create dataset
-# Save test frequency and referring hospital for each year 
+# Print out the number of tests per referring hospital, one worksheet for each month 
 
 
 createExcel1 <- function(data) {
@@ -77,6 +76,9 @@ createExcel1 <- function(data) {
     saveWorkbook(wb, paste0(out.dir, "/Investigations per hospital per month.xlsx"),
                overwrite = TRUE)}
 }
+
+
+# Print out the number of tests per referring hospital per month, one worksheet for test type.
 
 
 createExcel2 <- function(data) {
