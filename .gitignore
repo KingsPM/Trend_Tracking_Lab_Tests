@@ -49,3 +49,4 @@ output/
 #PDF files
 *.pdf
 
+packrat/lib*/
