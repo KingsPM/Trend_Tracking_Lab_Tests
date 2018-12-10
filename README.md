@@ -3,11 +3,11 @@ trendtracking
 
 ### Summarising and plotting lab data to look at trends and productivity.
 
-This [R](https://www.R-project.org/) script currently outputs four summary PDFs, "Billing Categories", "Tests Each Month", "Top 10 Referrers" and "Turnover Time Per Test". It also outputs two excel summary workbooks with the lab investigations, and their frequencies, divided into sheets based on either the month conducted ("Investigations per month per hospital") or the referring hospital ("Investigations per hospital per month").
+This [R](https://www.R-project.org/) script currently outputs four summary PDFs, "Billing Categories", "Tests Each Month", "Top 10 Referrers" and "Turnover Time Per Test". It also outputs two Excel summary workbooks with the lab investigation frequencies, divided into sheets based on either the month conducted ("Investigations per month per hospital") or the referring hospital ("Investigations per hospital per month").
 
 ## Running the script
 
-To run the script nagivate to its location on your PC on the command prompt and run:
+To run the script nagivate to its location on your PC on the command prompt and run (for Linux):
 
 `Rscript Lab_Activity_Data.R`
 
