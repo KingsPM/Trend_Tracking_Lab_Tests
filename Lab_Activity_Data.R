@@ -1,14 +1,7 @@
 #!/usr/bin/env Rscript
 
 # TODO(Callum):
-#   Make the script more portable (currently need java prerequisites)
-#   Virtual environment for R?
-#   The functions keep dropping rows containing non-finite values, can this be fixed?
-
-# have to install java environments locally outside of R
-# sudo apt install default-jre
-# sudo apt install default-jdk
-# R CMD javareconf
+#   The functions keeps dropping rows containing "non-finite" values, fix this.
 
 ##### Install packages, load libraries, get file paths #####
 
@@ -24,12 +17,8 @@ getPackages <- function(required.packages) {
 }
 
 
-# tidyverse had issues loading in Ubuntu 18.04.1 LTS so it was removed.
-# tidyverse loads ggplot2, dplyr, tidyr, readr, purrr, tibble, stringr, forcats.
-# Currently removed the "rJava" and "xlsxjars" packages
-
-getPackages(c("tcltk", "readxl", "reshape2", "lubridate", "xts", 
-              "data.table", "ggplot2", "gridExtra", "xlsx", "openxlsx"))
+getPackages(c("tcltk", "reshape2", "lubridate", "xts", "data.table",
+              "ggplot2", "gridExtra", "openxlsx"))
 
 input.excel <- tk_choose.files(default = '',
                                caption = "Please select the input excel file")
@@ -44,13 +33,13 @@ if (length(input.excel) == 0) {
        call. = FALSE)
 }
 
-data <- read_excel(input.excel)  # Get data frame from input excel file
+data <- read.xlsx(input.excel)  # Get data frame from input excel file
 
 ##### Produce a table that has the turnaround times from the input excel #####
 
 
 createDF <- function(data) {
-  Audit <- data[c("SIDC09 Hospital", "SIDC13 Investigation Requested", "SIDC16 Date Sample Received", "Reported date", "Real Billing category")]
+  Audit <- data[c("SIDC09.Hospital", "SIDC13.Investigation.Requested", "SIDC16.Date.Sample.Received", "Reported.date", "Real.Billing.category")]
   colnames(Audit) <- c("Hospital", "Investigation", "Sample_Received", "Test_Reported", "Billing_Category")
   Audit$Test_Reported <- as.Date(Audit$Test_Reported)
   Audit$Sample_Received <- as.Date(Audit$Sample_Received)
@@ -78,13 +67,13 @@ createExcel1 <- function(data) {
   wb = createWorkbook(paste0(out.dir, "/Investigations per hospital per month"))
   Hospital <- data[c("Hospital", "Investigation", "Year_Month")]
   for (i in sort(unique(Hospital$Year_Month))){
-    excelPrintout <- Hospital[Hospital$Year_Month == i,]
-    excelPrintout <- excelPrintout[c("Hospital", "Investigation")]
-    excelPrintout <- as.data.frame(table(excelPrintout))
-    row_sub <- excelPrintout$Freq != 0
-    excelPrintout <- excelPrintout[row_sub,]
+    excel.printout <- Hospital[Hospital$Year_Month == i,]
+    excel.printout <- excel.printout[c("Hospital", "Investigation")]
+    excel.printout <- as.data.frame(table(excel.printout))
+    row_sub <- excel.printout$Freq != 0
+    excel.printout <- excel.printout[row_sub,]
     addWorksheet(wb = wb, sheetName = i)  # Doesn't print?
-    writeData(wb = wb, sheet = i, x = excelPrintout)
+    writeData(wb = wb, sheet = i, x = excel.printout)
     saveWorkbook(wb, paste0(out.dir, "/Investigations per hospital per month.xlsx"),
                overwrite = TRUE)}
 }
