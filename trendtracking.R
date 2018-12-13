@@ -106,7 +106,6 @@ createPDF1 <- function(data) {
     turnoverTime <- data[c("Investigation", "Year_Month", "Turnover_Time", "Target_Turnaround")]
     turnoverTime <- na.omit(turnoverTime)
     pdf(paste0(out.dir, "/Turnover Time Per Test.pdf"))
-    sort(unique(turnoverTime$Investigation))
     graph <- lapply(sort(unique(turnoverTime$Investigation)), 
         function(i) {ggplot(turnoverTime[turnoverTime$Investigation == i,],
             aes(x = Year_Month, y = Turnover_Time)) +
@@ -228,3 +227,8 @@ main <- function(input) {
 if (!interactive()) {  # If interactive, run the fucntion main(createDF(data))
     main(createDF(data))
 }
+
+library(shiny)
+
+runApp(appDir = "~/Documents/Trend_Tracking_Lab_Tests/shinyapp.R")
+plot(graph)
