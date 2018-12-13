@@ -39,21 +39,21 @@ data <- read.xlsx(input.excel)  # Get data frame from input excel file
 
 
 createDF <- function(data) {
-    Audit <- data[c("SIDC09.Hospital", "SIDC13.Investigation.Requested", "SIDC16.Date.Sample.Received", "Reported.date", "Real.Billing.category")]
-    colnames(Audit) <- c("Hospital", "Investigation", "Sample_Received", "Test_Reported", "Billing_Category")
-    Audit$Test_Reported <- as.Date(Audit$Test_Reported)
-    Audit$Sample_Received <- as.Date(Audit$Sample_Received)
-    Audit$Turnover_Time <- Audit$Test_Reported - Audit$Sample_Received
-    Audit$Turnover_Time <- as.numeric(Audit$Turnover_Time)
-    Audit$Year_Reported <- format(as.Date(Audit$Test_Reported, format="%d/%m/%Y"),"%Y")
-    Audit$Month_Reported <- format(as.Date(Audit$Test_Reported, format="%d/%m/%Y"),"%m")
-    Audit$Day_Reported <- format(as.Date(Audit$Test_Reported, format="%d/%m/%Y"),"%d")
-    Audit[9] <- paste("Y", Audit$Year_Reported, "_M", Audit$Month_Reported, sep="")
-    colnames(Audit)[9] <- "Year_Month"
-    Audit[10] <- (30)
-    colnames(Audit)[10] <- "Target_Turnaround"
-    Audit <- na.omit(Audit)
-    return(Audit)
+    data <- data[c("SIDC09.Hospital", "SIDC13.Investigation.Requested", "SIDC16.Date.Sample.Received", "Reported.date", "Real.Billing.category")]
+    colnames(data) <- c("Hospital", "Investigation", "Sample_Received", "Test_Reported", "Billing_Category")
+    data$Test_Reported <- as.Date(data$Test_Reported)
+    data$Sample_Received <- as.Date(data$Sample_Received)
+    data$Turnover_Time <- data$Test_Reported - data$Sample_Received
+    data$Turnover_Time <- as.numeric(data$Turnover_Time)
+    data$Year_Reported <- format(as.Date(data$Test_Reported, format="%d/%m/%Y"),"%Y")
+    data$Month_Reported <- format(as.Date(data$Test_Reported, format="%d/%m/%Y"),"%m")
+    data$Day_Reported <- format(as.Date(data$Test_Reported, format="%d/%m/%Y"),"%d")
+    data[9] <- paste("Y", data$Year_Reported, "_M", data$Month_Reported, sep="")
+    colnames(data)[9] <- "Year_Month"
+    data[10] <- (30)
+    colnames(data)[10] <- "Target_Turnaround"
+    data <- na.omit(data)
+    return(data)
 }
 
 
@@ -231,4 +231,3 @@ if (!interactive()) {  # If interactive, run the fucntion main(createDF(data))
 library(shiny)
 
 runApp(appDir = "~/Documents/Trend_Tracking_Lab_Tests/shinyapp.R")
-plot(graph)
