@@ -20,13 +20,13 @@ getPackages <- function(required.packages) {
 getPackages(c("tcltk", "reshape2", "lubridate", "xts", "data.table",
               "ggplot2", "gridExtra", "openxlsx", "shiny"))
 
-# input.excel <- tk_choose.files(default = '',
+# input.csv <- tk_choose.files(default = '',
 #                                caption = "Please select the input excel file")
 # 
 # out.dir <- tk_choose.dir(default = getwd(),
 #                          caption = "Where should the output be saved?")
 
-input.excel <- "~/Documents/Trend_Tracking_Lab_Tests/2016-2017-2018_LMh-Activity_Barnaby.xlsx"
+input.excel <- "~/Documents/Trend_Tracking_Lab_Tests/2016-2017-2018_LMh-Activity_Barnaby.csv"
 out.dir <- "~/Documents/Trend_Tracking_Lab_Tests/"
 
 # Test that there is at least one argument, if not throw an error.
@@ -37,68 +37,110 @@ if (length(input.excel) == 0) {
 }
 
 
-createDF <- function(data) {
-    data <- data[c("SIDC09.Hospital", "SIDC13.Investigation.Requested", "SIDC16.Date.Sample.Received", "Reported.date", "Real.Billing.category")]
-    colnames(data) <- c("Hospital", "Investigation", "Sample_Received", "Test_Reported", "Billing_Category")
-    data$Test_Reported <- as.Date(data$Test_Reported)
-    data$Sample_Received <- as.Date(data$Sample_Received)
-    data$Turnover_Time <- data$Test_Reported - data$Sample_Received
-    data$Turnover_Time <- as.numeric(data$Turnover_Time)
-    data$Year_Reported <- format(as.Date(data$Test_Reported, format="%d/%m/%Y"),"%Y")
-    data$Month_Reported <- format(as.Date(data$Test_Reported, format="%d/%m/%Y"),"%m")
-    data$Day_Reported <- format(as.Date(data$Test_Reported, format="%d/%m/%Y"),"%d")
-    data[9] <- paste("Y", data$Year_Reported, "_M", data$Month_Reported, sep="")
-    colnames(data)[9] <- "Year_Month"
-    data[10] <- (30)
-    colnames(data)[10] <- "Target_Turnaround"
-    data <- na.omit(data)
-    return(data)
+CreateDF <- function(data) {
+  
+  # Create df from data
+  
+  data.cleaned <- data[c("SIDC09.Hospital", "SIDC13.Investigation.Requested", "SIDC16.Date.Sample.Received", "Reported.date", "Real.Billing.category")]
+  
+  # Give better header names
+  
+  colnames(data.cleaned) <- c("Hospital", "Investigation", "Sample.Received", "Test.Report.Produced", "Billing.Category")
+  data.cleaned$Sample.Received <- as.Date(data.cleaned$Sample.Received, format = "%d/%m/%Y")
+  data.cleaned$Test.Report.Produced <- as.Date(data.cleaned$Test.Report.Produced, format = "%d/%m/%Y")
+
+  # Remove tests done in 1899 (erroneous)
+  
+  data.cleaned$Year.Reported <- format(as.Date(data.cleaned[["Test.Report.Produced"]]), "%Y")
+  data.cleaned$Month.Reported <-format(as.Date(data.cleaned[["Test.Report.Produced"]]), "%m")
+  data.cleaned$Day.Reported <- format(as.Date(data.cleaned[["Test.Report.Produced"]]), "%d")
+  data.cleaned <- data.cleaned[!(data.cleaned$Year.Reported == "1899"),]
+  data.cleaned <- data.cleaned[!(data.cleaned$Investigation == "#N/A"),]
+  data.cleaned <- data.cleaned[!(data.cleaned$Hospital == "Not stated"),]
+  data.cleaned <- data.cleaned[!(data.cleaned$Hospital == "5"),]
+  
+  # Calculate turnaround time in days
+  
+  data.cleaned$Turnover.Time <- as.Date(data.cleaned[["Test.Report.Produced"]]) - as.Date(data.cleaned[["Sample.Received"]])
+  data.cleaned$Turnover.Time <- as.numeric(data.cleaned$Turnover.Time)
+  
+  # Create a "Year.Month" column to label the x-axis with
+  
+  data.cleaned$Year.Month <- paste("Year ", data.cleaned$Year.Reported, ", Month ", data.cleaned$Month.Reported, sep="")
+  data.cleaned$Target.Turnaround <- (30)
+  data.cleaned <- na.omit(data.cleaned)
+  
+  return(data.cleaned)
+  
 }
 
+data <- read.csv(input.excel)  # Get data frame from input excel file
+data.cleaned <- CreateDF(data)
 
-data <- read.xlsx(input.excel)  # Get data frame from input excel file
-data <- createDF(data)
 
-#lapply(sort(unique(turnoverTime$Investigation)), 
-
-graph <- function(i) {
-  ggplot(turnoverTime[turnoverTime$Investigation == i,],
-    aes(x = Year_Month, y = Turnover_Time)) +
+TurnoverPlot <- function(i) {
+  ggplot(data.cleaned[data.cleaned$Investigation == i,],
+    aes(x = Year.Month, y = Turnover.Time)) +
   labs(title = i, subtitle = "Outliers, defined as ±1.5*IQR, output have not been plotted. Boxplots \nrepresent Median, Q1-Q3 and 1.5*Q1Q3. Red line is the mean.",
     y = "Turnaround Time (Days)",
     x = "Year and Month") +
   geom_boxplot(alpha = 0.80, outlier.colour = "black",
     outlier.shape = NA, outlier.size = .5, notch = FALSE,
     fill = "lightskyblue2", color = "black") +
-  stat_summary(aes(y = Turnover_Time, group = 1), fun.y = mean,
+  stat_summary(aes(y = Turnover.Time, group = 1), fun.y = mean,
     colour="red", geom="line", group = 1) +
     theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1),
       panel.grid.major.x = element_blank(), 
       panel.grid.major.y = element_line(size = .1, color = "black")) +
-    scale_x_discrete(limits = sort(unique(data$Year_Month)),
-    breaks = sort(unique(data$Year_Month))) +
-    ylim(-5, quantile(turnoverTime[turnoverTime$Investigation == i,][[3]])[[4]]+10) +
-      geom_hline(yintercept = data$Target_Turnaround, linetype = "dashed",
-      color = "red", size = .5)
-  }
+    scale_x_discrete(limits = sort(unique(data$Year.Month)),
+    breaks = sort(unique(data$Year.Month))) +
+    ylim(-5, quantile(data.cleaned[data.cleaned$Turnover.Time == i,][[3]])[[4]]+10) +
+    geom_hline(yintercept = data$Target.Turnaround, linetype = "dashed",
+    color = "red", size = .5)
+}
+
+# table(data.cleaned$Investigation)
+
+TestsPerYear <- function(i) {
+  Investigation <- data[c("Investigation", "Year_Reported", "Month_Reported")]
+  Investigation <- as.data.frame(table(Investigation))
+  graph <- ggplot(Investigation[Investigation$Investigation == i,], 
+             aes(Month.Reported, Freq, group = Year.Reported, color = Year.Reported)) +
+           labs(title = i, y = "Frequency", x = "Month") + geom_point() +
+           geom_line() + theme_minimal() +
+           theme(axis.text.x = element_text(),
+             panel.grid.major.x = element_blank(),
+             panel.grid.major.y = element_line(size = .1, color = "black"))
+  print(graph)
+}
+
 
 # Define UI for slider app
+
 
 ui <- fluidPage(
   titlePanel("trendtracker"),
   sidebarLayout(
     sidebarPanel(
-      sliderInput("somenumber", "Slidey slide bar",
-                  min = 0, max = 10,
-                  value = 0),
-      selectInput("test", "Test Name:",
-                  c(sort(unique(turnoverTime$Investigation))))
-    ),
+      
+      # Allows you to select a test type
+      
+      selectInput("turnover.time", "Test Name:",
+                  sort(unique(data.cleaned$Investigation))),
+      
+      # Allows you to select a range of dates
+      
+      sliderInput("range", "Month:",
+                  min = 0, max = 36,
+                  value = c(12, 24))
+      ),
+    
+    # Main panel for plotting the graphs
     
     mainPanel(
-      verbatimTextOutput(outputId = "printTest"),
       tableOutput("values"),
-      plotOutput(outputId = "testPlot")
+      plotOutput(outputId = "turnoverPlot"),
+      plotOutput(outputId = "testsPerYear")
     )
   )
 )
@@ -106,14 +148,27 @@ ui <- fluidPage(
 # Define server logic for slider examples
 
 server <- function(input, output) {
-    sliderValues <- reactive({
-        data.frame(Name = c(input$test), # "Important Value"),
-            Value = as.character(c(input$somenumber, stringsAsFactors = FALSE)))})
+  
+  # Produces a table for the interactive values
+  
+  sliderValues <- reactive({
+    data.frame(
+      Unit = c("Month"),
+      Range = as.character(c(paste(input$range, collapse = " to "))),
+      stringsAsFactors = FALSE)
+  })
     
-    # Show the values in an HTML table
-    output$textOutput <- renderPrint({(input$test)})
-    output$values <- renderTable({sliderValues()}) #[1,])  # Adding an extra blank row so force removed
-    output$testPlot <- renderPlot({plot(graph(input$test))})
+  # Pass slider values to the display
+  
+  output$values <- renderTable({
+    sliderValues()
+  })
+  
+  # Information for the plots
+  
+  output$turnoverPlot <- renderPlot({(TurnoverPlot(input$turnover.time))})
+  output$testsPerYear <- renderPlot({(TestsPerYear(input$turnover.time))})
+  
 }
 
 shinyApp(ui = ui, server = server)

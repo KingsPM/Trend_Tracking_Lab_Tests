@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 # TODO(Callum):
-#   The functions keeps dropping rows containing "non-finite" values, fix this.
+#   Fix "non-finite" values bounding issue.
 
 ##### Install packages, load libraries, get file paths #####
 

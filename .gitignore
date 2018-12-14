@@ -39,6 +39,9 @@ rsconnect/
 *.xls
 *.xlsx
 
+# CSV files (have lab information)
+*.csv
+
 #Ignore the output directory
 output/
 
