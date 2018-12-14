@@ -58,25 +58,29 @@ createDF <- function(data) {
 
 data <- read.xlsx(input.excel)  # Get data frame from input excel file
 data <- createDF(data)
-graph <- ggplot(data[data$Investigation == "Translocation Assay (QPCR-CML)",],
-    aes(x = Year_Month, y = Turnover_Time)) +
-    labs(title = "Translocation Assay (QPCR-CML)", subtitle = "Outliers, defined as ±1.5*IQR, output have not been plotted. Boxplots \nrepresent Median, Q1-Q3 and 1.5*Q1Q3. Red line is the mean.",
-        y = "Turnaround Time (Days)",
-        x = "Year and Month") +
-    geom_boxplot(alpha = 0.80, outlier.colour = "black",
-        outlier.shape = NA, outlier.size = .5, notch = FALSE,
-    fill = "lightskyblue2", color = "black") +
-    stat_summary(aes(y = Turnover_Time, group = 1), fun.y = mean,
-        colour="red", geom="line", group = 1) +
-    theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        panel.grid.major.x = element_blank(), 
-        panel.grid.major.y = element_line(size = .1, color = "black")) +
-    scale_x_discrete(limits = sort(unique(data$Year_Month)),
-        breaks = sort(unique(data$Year_Month))) +
-    ylim(-5, quantile(turnoverTime[turnoverTime$Investigation == "Translocation Assay (QPCR-CML)",][[3]])[[4]]+10) +
-    geom_hline(yintercept = data$Target_Turnaround,
-        linetype = "dashed", color = "red", size = .5)
 
+#lapply(sort(unique(turnoverTime$Investigation)), 
+
+graph <- function(i) {
+  ggplot(turnoverTime[turnoverTime$Investigation == i,],
+    aes(x = Year_Month, y = Turnover_Time)) +
+  labs(title = i, subtitle = "Outliers, defined as ±1.5*IQR, output have not been plotted. Boxplots \nrepresent Median, Q1-Q3 and 1.5*Q1Q3. Red line is the mean.",
+    y = "Turnaround Time (Days)",
+    x = "Year and Month") +
+  geom_boxplot(alpha = 0.80, outlier.colour = "black",
+    outlier.shape = NA, outlier.size = .5, notch = FALSE,
+    fill = "lightskyblue2", color = "black") +
+  stat_summary(aes(y = Turnover_Time, group = 1), fun.y = mean,
+    colour="red", geom="line", group = 1) +
+    theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1),
+      panel.grid.major.x = element_blank(), 
+      panel.grid.major.y = element_line(size = .1, color = "black")) +
+    scale_x_discrete(limits = sort(unique(data$Year_Month)),
+    breaks = sort(unique(data$Year_Month))) +
+    ylim(-5, quantile(turnoverTime[turnoverTime$Investigation == i,][[3]])[[4]]+10) +
+      geom_hline(yintercept = data$Target_Turnaround, linetype = "dashed",
+      color = "red", size = .5)
+  }
 
 # Define UI for slider app
 
@@ -86,12 +90,15 @@ ui <- fluidPage(
     sidebarPanel(
       sliderInput("somenumber", "Slidey slide bar",
                   min = 0, max = 10,
-                  value = 0)
+                  value = 0),
+      selectInput("test", "Test Name:",
+                  c(sort(unique(turnoverTime$Investigation))))
     ),
     
     mainPanel(
+      verbatimTextOutput(outputId = "printTest"),
       tableOutput("values"),
-      plotOutput(outputId = "distPlot")
+      plotOutput(outputId = "testPlot")
     )
   )
 )
@@ -100,12 +107,13 @@ ui <- fluidPage(
 
 server <- function(input, output) {
     sliderValues <- reactive({
-        data.frame(Name = c("Important Value"),
+        data.frame(Name = c(input$test), # "Important Value"),
             Value = as.character(c(input$somenumber, stringsAsFactors = FALSE)))})
     
     # Show the values in an HTML table
-    output$values <- renderTable({sliderValues()}[1,])  # Adding an extra blank row so force removed
-    output$distPlot <- renderPlot({plot(x = input$somenumber, y = input$somenumber/2)})
+    output$textOutput <- renderPrint({(input$test)})
+    output$values <- renderTable({sliderValues()}) #[1,])  # Adding an extra blank row so force removed
+    output$testPlot <- renderPlot({plot(graph(input$test))})
 }
 
 shinyApp(ui = ui, server = server)
