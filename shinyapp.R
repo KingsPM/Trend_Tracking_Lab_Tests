@@ -78,10 +78,12 @@ data <- read.csv(input.excel)  # Get data frame from input excel file
 data.cleaned <- CreateDF(data)
 
 
-TurnoverPlot <- function(i) {
-  ggplot(data.cleaned[data.cleaned$Investigation == i,],
+TurnoverPlot <- function(test, date) {
+  plot.data <- data.cleaned[data.cleaned$Investigation == test,]
+  plot.data <- plot.data[plot.data$Test.Report.Produced>=date[1] & plot.data$Test.Report.Produced<=date[2],]
+  ggplot(plot.data,
     aes(x = Year.Month, y = Turnover.Time)) +
-  labs(title = i, subtitle = "Outliers, defined as ±1.5*IQR, output have not been plotted. Boxplots \nrepresent Median, Q1-Q3 and 1.5*Q1Q3. Red line is the mean.",
+  labs(title = test, subtitle = "Outliers, defined as ±1.5*IQR, output have not been plotted. Boxplots \nrepresent Median, Q1-Q3 and 1.5*Q1Q3. Red line is the mean.",
     y = "Turnaround Time (Days)",
     x = "Year and Month") +
   geom_boxplot(alpha = 0.80, outlier.colour = "black",
@@ -92,21 +94,23 @@ TurnoverPlot <- function(i) {
     theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1),
       panel.grid.major.x = element_blank(), 
       panel.grid.major.y = element_line(size = .1, color = "black")) +
-    scale_x_discrete(limits = sort(unique(data$Year.Month)),
-    breaks = sort(unique(data$Year.Month))) +
-    ylim(-5, quantile(data.cleaned[data.cleaned$Turnover.Time == i,][[3]])[[4]]+10) +
-    geom_hline(yintercept = data$Target.Turnaround, linetype = "dashed",
+    scale_x_discrete(limits = sort(unique(data.cleaned$Year.Month)),
+    breaks = sort(unique(data.cleaned$Year.Month))) +
+    ylim(-5, (quantile(data.cleaned$Turnover.Time)[[4]] + 10)) +
+    geom_hline(yintercept = data.cleaned$Target.Turnaround[1], linetype = "dashed",
     color = "red", size = .5)
 }
 
-# table(data.cleaned$Investigation)
 
-TestsPerYear <- function(i) {
-  Investigation <- data[c("Investigation", "Year_Reported", "Month_Reported")]
+TestsPerYear <- function(test, date) {
+  Investigation <- data.cleaned[c("Investigation", "Test.Report.Produced", "Year.Reported", "Month.Reported")]
+  Investigation <- Investigation[Investigation$Investigation == test,]
+  Investigation <- Investigation[Investigation$Test.Report.Produced>=date[1] & Investigation$Test.Report.Produced<=date[2],]
+  Investigation <- Investigation[c("Year.Reported", "Month.Reported")]
   Investigation <- as.data.frame(table(Investigation))
-  graph <- ggplot(Investigation[Investigation$Investigation == i,], 
+  graph <- ggplot(Investigation[which(Investigation$Freq>0),],  # remove freq 0 values
              aes(Month.Reported, Freq, group = Year.Reported, color = Year.Reported)) +
-           labs(title = i, y = "Frequency", x = "Month") + geom_point() +
+           labs(title = test, y = "Frequency", x = "Month") + geom_point() +
            geom_line() + theme_minimal() +
            theme(axis.text.x = element_text(),
              panel.grid.major.x = element_blank(),
@@ -118,7 +122,7 @@ TestsPerYear <- function(i) {
 # Define UI for slider app
 
 
-ui <- fluidPage(
+ui <- shinyUI(bootstrapPage(
   titlePanel("trendtracker"),
   sidebarLayout(
     sidebarPanel(
@@ -130,34 +134,26 @@ ui <- fluidPage(
       
       # Allows you to select a range of dates
       
-      sliderInput("range", "Month:",
-                  min = 0, max = 36,
-                  value = c(12, 24))
+      dateRangeInput("dateRange", "Test report date range:",
+                     start = sort(unique(data.cleaned$Test.Report.Produced))[1],
+                     end = sort(unique(data.cleaned$Test.Report.Produced))[length(sort(unique(data.cleaned$Test.Report.Produced)))])
       ),
-    
-    # Main panel for plotting the graphs
-    
-    mainPanel(
-      tableOutput("values"),
-      plotOutput(outputId = "turnoverPlot"),
-      plotOutput(outputId = "testsPerYear")
+      
+      # Main panel for plotting the graphs
+      
+      mainPanel(
+        verbatimTextOutput("dateRangeText"),
+        plotOutput(outputId = "turnoverPlot"),
+        plotOutput(outputId = "testsPerYear"))
     )
   )
 )
 
+
 # Define server logic for slider examples
 
 server <- function(input, output) {
-  
-  # Produces a table for the interactive values
-  
-  sliderValues <- reactive({
-    data.frame(
-      Unit = c("Month"),
-      Range = as.character(c(paste(input$range, collapse = " to "))),
-      stringsAsFactors = FALSE)
-  })
-    
+
   # Pass slider values to the display
   
   output$values <- renderTable({
@@ -166,22 +162,16 @@ server <- function(input, output) {
   
   # Information for the plots
   
-  output$turnoverPlot <- renderPlot({(TurnoverPlot(input$turnover.time))})
-  output$testsPerYear <- renderPlot({(TestsPerYear(input$turnover.time))})
+  output$dateRangeText  <- renderText({
+    paste(#as.character(input$dateRange), collapse = " to ",
+    as.character(input$dateRange[1]),
+    as.character(input$dateRange[2])
+    )
+  })
+  
+  output$turnoverPlot <- renderPlot({(TurnoverPlot(input$turnover.time, input$dateRange))})
+  output$testsPerYear <- renderPlot({(TestsPerYear(input$turnover.time, input$dateRange))})
   
 }
 
 shinyApp(ui = ui, server = server)
-
-
-# runExample("01_hello")      # a histogram
-# runExample("02_text")       # tables and data frames
-# runExample("03_reactivity") # a reactive expression
-# runExample("04_mpg")        # global variables
-# runExample("05_sliders")    # slider bars
-# runExample("06_tabsets")    # tabbed panels
-# runExample("07_widgets")    # help text and submit buttons
-# runExample("08_html")       # Shiny app built from HTML
-# runExample("09_upload")     # file upload wizard
-# runExample("10_download")   # file download wizard
-# runExample("11_timer")      # an automated timer
