@@ -8,7 +8,7 @@
 # Function to install packages (if not installed already) and load them
 
 
-getPackages <- function(required.packages) {
+GetPackages <- function(required.packages) {
   packages.not.installed <- 
     required.packages[!(required.packages %in% installed.packages()[, "Package"])]
   if(length(packages.not.installed)){
@@ -17,7 +17,7 @@ getPackages <- function(required.packages) {
 }
 
 
-getPackages(c("tcltk", "reshape2", "lubridate", "xts", "data.table",
+GetPackages(c("tcltk", "reshape2", "lubridate", "xts", "data.table",
               "ggplot2", "gridExtra", "openxlsx", "shiny", "shinyWidgets"))
 
 # input.csv <- tk_choose.files(default = '',
@@ -41,13 +41,17 @@ CreateDF <- function(data) {
   
   # Create df from data
   
-  data.cleaned <- data[c("SIDC09.Hospital", "SIDC13.Investigation.Requested", "SIDC16.Date.Sample.Received", "Reported.date", "Real.Billing.category")]
+  data.cleaned <- data[c("SIDC09.Hospital", "SIDC13.Investigation.Requested",
+    "SIDC16.Date.Sample.Received", "Reported.date", "Real.Billing.category")]
   
   # Give better header names
   
-  colnames(data.cleaned) <- c("Hospital", "Investigation", "Sample.Received", "Test.Report.Produced", "Billing.Category")
-  data.cleaned$Sample.Received <- as.Date(data.cleaned$Sample.Received, format = "%d/%m/%Y")
-  data.cleaned$Test.Report.Produced <- as.Date(data.cleaned$Test.Report.Produced, format = "%d/%m/%Y")
+  colnames(data.cleaned) <- c("Hospital", "Investigation", "Sample.Received",
+    "Test.Report.Produced", "Billing.Category")
+  data.cleaned$Sample.Received <- as.Date(data.cleaned$Sample.Received,
+    format = "%d/%m/%Y")
+  data.cleaned$Test.Report.Produced <- as.Date(data.cleaned$Test.Report.Produced,
+    format = "%d/%m/%Y")
 
   # Remove tests done in 1899 (erroneous)
   
@@ -66,7 +70,8 @@ CreateDF <- function(data) {
   
   # Create a "Year.Month" column to label the x-axis with
   
-  data.cleaned$Year.Month <- paste("Year ", data.cleaned$Year.Reported, ", Month ", data.cleaned$Month.Reported, sep="")
+  data.cleaned$Year.Month <- paste("Year ", data.cleaned$Year.Reported, ", Month ", 
+    data.cleaned$Month.Reported, sep="")
   data.cleaned$Target.Turnaround <- (10)
   data.cleaned <- na.omit(data.cleaned)
   return(data.cleaned)
@@ -80,8 +85,10 @@ data.cleaned <- CreateDF(data)
 
 TurnoverPlot <- function(test, date) {
   plot.data <- data.cleaned[data.cleaned$Investigation == test,]
-  plot.data <- plot.data[plot.data$Test.Report.Produced>=date[1] & plot.data$Test.Report.Produced<=date[2],]
-  dates <- data.cleaned[data.cleaned$Test.Report.Produced>=date[1] & data.cleaned$Test.Report.Produced<=date[2],]
+  plot.data <- plot.data[plot.data$Test.Report.Produced>=date[1] 
+    & plot.data$Test.Report.Produced<=date[2],]
+  dates <- data.cleaned[data.cleaned$Test.Report.Produced>=date[1]
+    & data.cleaned$Test.Report.Produced<=date[2],]
   ggplot(plot.data,
     aes(x = Year.Month, y = Turnover.Time)) +
   labs(title = test, subtitle = "Outliers, defined as ±1.5*IQR, output have not been plotted. Boxplots \nrepresent Median, Q1-Q3 and 1.5*Q1Q3. Red line is the mean.",
@@ -104,12 +111,15 @@ TurnoverPlot <- function(test, date) {
 
 
 TestsPerYear <- function(test, date) {
-  Investigation <- data.cleaned[c("Investigation", "Test.Report.Produced", "Year.Reported", "Month.Reported")]
+  Investigation <- data.cleaned[c("Investigation", "Test.Report.Produced",
+    "Year.Reported", "Month.Reported")]
   Investigation <- Investigation[Investigation$Investigation == test,]
-  Investigation <- Investigation[Investigation$Test.Report.Produced>=date[1] & Investigation$Test.Report.Produced<=date[2],]
+  Investigation <- Investigation[Investigation$Test.Report.Produced>=date[1]
+    & Investigation$Test.Report.Produced<=date[2],]
   Investigation <- Investigation[c("Year.Reported", "Month.Reported")]
   Investigation <- as.data.frame(table(Investigation))
-  Investigation$Year.Month <- paste(Investigation$Year.Reported, ".", Investigation$Month.Reported, sep = "")
+  Investigation$Year.Month <- paste(Investigation$Year.Reported, ".", 
+    Investigation$Month.Reported, sep = "")
   graph <- ggplot(Investigation[which(Investigation$Freq>0),],  # remove freq 0 values
     aes(x = Year.Month, y = Freq, group = Year.Reported, color = Year.Reported)) +
     labs(title = test, y = "Frequency", x = "Year.Month") + geom_point() +
@@ -149,14 +159,18 @@ TopReferrers <- function(referrer, date) {
   topHospitals <<- data.cleaned[c("Hospital")]
   topHospitals <<- as.data.frame(table(topHospitals))
   topHospitals <<- topHospitals[ave(-topHospitals$Freq, FUN = rank) <= 10,]
-  referrerHospital <- data.cleaned[c("Hospital", "Test.Report.Produced", "Year.Reported", "Month.Reported")]
-  referrerHospital <- referrerHospital[referrerHospital$Test.Report.Produced >= 
-    date[1] & referrerHospital$Test.Report.Produced <= date[2],]
-  referrerHospital <- referrerHospital[c("Hospital", "Year.Reported", "Month.Reported")]
+  referrerHospital <- data.cleaned[c(
+    "Hospital", "Test.Report.Produced", "Year.Reported", "Month.Reported")]
+  referrerHospital <- referrerHospital[
+    referrerHospital$Test.Report.Produced >= date[1] & referrerHospital$Test.Report.Produced <= date[2]
+    ,]
+  referrerHospital <- referrerHospital[c(
+    "Hospital", "Year.Reported", "Month.Reported")]
   referrerHospital <- as.data.frame(table(referrerHospital))
   referrerHospital <- subset(referrerHospital, Hospital %in% topHospitals$topHospitals)
   referrerHospital <- referrerHospital[referrerHospital$Hospital == referrer,]
-  referrerHospital$Year.Month <- paste(referrerHospital$Year.Reported, ".", referrerHospital$Month.Reported, sep = "")
+  referrerHospital$Year.Month <- paste(
+    referrerHospital$Year.Reported, ".", referrerHospital$Month.Reported, sep = "")
   graph <- ggplot(referrerHospital[which(referrerHospital$Freq>0),],
     aes(x = Year.Month, y = Freq, group = Year.Reported, color = Year.Reported)) +
     labs(title = referrer, y = "Frequency (All Tests)", x = "Year.Month") +
@@ -165,6 +179,20 @@ TopReferrers <- function(referrer, date) {
       panel.grid.major.x = element_blank(),
       panel.grid.major.y = element_line(size = .1, color = "black"))
   print(graph)
+}
+
+CreateDownloadTable <- function(data, date, referrer, bill){
+  
+  createDownloadTable <- data[
+    data$Test.Report.Produced >= date[1] & data$Test.Report.Produced <= date[2]
+    ,]
+  createDownloadTable <-createDownloadTable[
+    createDownloadTable$Hospital == referrer
+    ,]
+  createDownloadTable <- createDownloadTable[
+    createDownloadTable$Billing.Category == bill
+    ,]
+  
 }
 
 
@@ -178,29 +206,41 @@ ui <- basicPage(
       
       # Allows you to select a test type
       
-      pickerInput("turnover.time", "Test Name:",
-                  choices = as.character(sort(unique(data.cleaned$Investigation))),
-                  options = list(`actions-box` = TRUE), 
-                  multiple = T,
-                  selected = as.character(sort(unique(data.cleaned$Investigation)))[1]),
+      pickerInput(
+        "turnover.time", "Test Name:",
+        choices = as.character(sort(unique(data.cleaned$Investigation))),
+        options = list(`actions-box` = TRUE), 
+        multiple = T,
+        selected = as.character(sort(unique(data.cleaned$Investigation)))[1]),
       
-      pickerInput("bill.type", "Work Type:",
-                  choices = as.character(sort(unique(data.cleaned$Billing.Category))),
-                  options = list(`actions-box` = TRUE), 
-                  multiple = T,
-                  selected = as.character(sort(unique(data.cleaned$Billing.Category)))[1]),
+      pickerInput(
+        "bill.type", "Work Type:",
+        choices = as.character(sort(unique(data.cleaned$Billing.Category))),
+        options = list(`actions-box` = TRUE), 
+        multiple = T,
+        selected = as.character(sort(unique(data.cleaned$Billing.Category)))[1]),
       
-      pickerInput("referrer.name", "Referrer Name:",
-                  choices = as.character(sort(unique(topHospitals$topHospitals))),
-                  options = list(`actions-box` = TRUE), 
-                  multiple = T,
-                  selected = as.character(sort(unique(topHospitals$topHospitals)))[1]),
+      pickerInput(
+        "referrer.name", "Referrer Name:",
+        choices = as.character(sort(unique(topHospitals$topHospitals))),
+        options = list(`actions-box` = TRUE), 
+        multiple = T,
+        selected = as.character(sort(unique(topHospitals$topHospitals)))[1]),
       
       # Allows you to select a range of dates
       
-      dateRangeInput("date.range", "Test Report Date Range:",
-                     start = sort(unique(data.cleaned$Test.Report.Produced))[1],
-                     end = sort(unique(data.cleaned$Test.Report.Produced))[length(sort(unique(data.cleaned$Test.Report.Produced)))])
+      dateRangeInput(
+        "date.range", "Test Report Date Range:",
+        start = sort(unique(data.cleaned$Test.Report.Produced))[1],
+        end = sort(unique(
+          data.cleaned$Test.Report.Produced))[length(sort(unique(
+            data.cleaned$Test.Report.Produced)))]),
+      
+      # Download button
+      
+      downloadButton(
+        "downloadData", "Download")
+      
       ),
       
       # Main panel for plotting the graphs
@@ -227,16 +267,26 @@ server <- function(input, output) {
   # Information on the dates selected
   
   output$date.rangeText  <- renderText({
-    paste(collapse = " to ",
-    as.character(input$date.range[1]),
-    as.character(input$date.range[2])
+    paste(
+      collapse = " to ",
+      as.character(input$date.range[1]),
+      as.character(input$date.range[2])
     )
   })
-  
-  output$turnoverPlot <- renderPlot({(TurnoverPlot(input$turnover.time, input$date.range))})
-  output$testsPerYear <- renderPlot({(TestsPerYear(input$turnover.time, input$date.range))})
-  output$billingType <- renderPlot({(BillingType(input$bill.type, input$date.range))})
-  output$topReferrers <- renderPlot({(TopReferrers(input$referrer.name, input$date.range))})
+
+  output$turnoverPlot <- renderPlot({(
+    TurnoverPlot(input$turnover.time, input$date.range)
+    )})
+  output$testsPerYear <- renderPlot({(
+    TestsPerYear(input$turnover.time, input$date.range)
+    )})
+  output$billingType <- renderPlot({(
+    BillingType(input$bill.type, input$date.range)
+    )})
+  output$topReferrers <- renderPlot({(
+    TopReferrers(input$referrer.name, input$date.range)
+    )})
+
 }
 
 shinyApp(ui = ui, server = server)
