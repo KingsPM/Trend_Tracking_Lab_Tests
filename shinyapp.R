@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 # TODO(Callum):
-#   Finish the shiny app
+#   Add a download button that produces a file based on user input
 
 ##### Install packages, load libraries, get file paths #####
 
@@ -99,13 +99,13 @@ TurnoverPlot <- function(test, date) {
     fill = "lightskyblue2", color = "black") +
   stat_summary(aes(y = Turnover.Time, group = 1), fun.y = mean,
     colour="red", geom="line", linetype = "dashed", group = 1) +
-    theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1),
-      panel.grid.major.x = element_blank(), 
-      panel.grid.major.y = element_line(size = .1, color = "black")) +
-    scale_x_discrete(limits = sort(unique(dates$Year.Month)),
+  theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major.x = element_blank(), 
+    panel.grid.major.y = element_line(size = .1, color = "black")) +
+  scale_x_discrete(limits = sort(unique(dates$Year.Month)),
     breaks = sort(unique(dates$Year.Month))) +
-    ylim(-5, (quantile(plot.data$Turnover.Time)[[4]] + 10)) +
-    geom_hline(yintercept = plot.data$Target.Turnaround[1], linetype = "solid",
+  ylim(-5, (quantile(plot.data$Turnover.Time)[[4]] + 10)) +
+  geom_hline(yintercept = plot.data$Target.Turnaround[1], linetype = "solid",
     color = "red", size = .5)
 }
 
@@ -182,7 +182,6 @@ TopReferrers <- function(referrer, date) {
 }
 
 CreateDownloadTable <- function(data, date, referrer, bill){
-  
   createDownloadTable <- data[
     data$Test.Report.Produced >= date[1] & data$Test.Report.Produced <= date[2]
     ,]
@@ -192,9 +191,10 @@ CreateDownloadTable <- function(data, date, referrer, bill){
   createDownloadTable <- createDownloadTable[
     createDownloadTable$Billing.Category == bill
     ,]
-  
+  print(createDownloadTable)
 }
 
+CreateDownloadTable
 
 # Define UI for the shiny app
 
@@ -239,7 +239,7 @@ ui <- basicPage(
       # Download button
       
       downloadButton(
-        "downloadData", "Download")
+        "download.data", "Download data as .csv")
       
       ),
       
@@ -286,6 +286,17 @@ server <- function(input, output) {
   output$topReferrers <- renderPlot({(
     TopReferrers(input$referrer.name, input$date.range)
     )})
+  
+  output$download.data <- downloadHandler(
+    filename = function() {
+      paste(Sys.Date(), "-export.csv", sep = "")
+    },
+    content = function(file) {
+      write.csv(CreateDownloadTable(
+        data.cleaned, input$date.range, input$referrer.name, input$bill.type),
+        file)
+    }
+  )
 
 }
 
